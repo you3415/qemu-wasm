@@ -1,177 +1,298 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<title>64bit ISO Emulator (x86_64 QEMU Wasm)</title>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-<link rel="stylesheet" href="./vendor/xterm.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QEMU Wasm エミュレータ (x86_64)</title>
+  <script src="./coi-serviceworker.js"></script>
+  <link rel="stylesheet" href="./vendor/xterm.css" />
+  <style>
+    :root {
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .badge {
+      background: #eff6ff;
+      color: var(--primary);
+      border: 1px solid #bfdbfe;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .control-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .file-input-wrapper {
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .file-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      background: #f1f5f9;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    button#start-btn {
+      background-color: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+      align-self: flex-end;
+    }
+
+    button#start-btn:hover:not(:disabled) {
+      background-color: var(--primary-hover);
+    }
+
+    button#start-btn:disabled {
+      background-color: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    #status-bar {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #f1f5f9;
+      border: 1px solid var(--border-color);
+      font-size: 0.88rem;
+      color: var(--text-main);
+    }
+
+    #status-bar.error {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+
+    #status-bar.ready {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #15803d;
+    }
+
+    .terminal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    #terminal-alpine-x86_64 {
+      width: 100%;
+      min-height: 460px;
+      background: #0f172a;
+      border-radius: 8px;
+      overflow: hidden;
+      padding: 8px;
+    }
+  </style>
 </head>
-<body class="bg-dark text-light">
-<main class="container py-4">
+<body>
+  <div class="container">
+    <header>
+      <h1>QEMU Wasm エミュレータ</h1>
+      <span class="badge">x86_64 / WebAssembly</span>
+    </header>
 
-  <h1 class="h3 mb-3">64bit ISO Emulator (x86_64)</h1>
-
-  <div id="env_alert" class="alert alert-danger d-none" role="alert"></div>
-
-  <div class="card bg-secondary text-white mb-4">
-    <div class="card-body">
-      <div class="row g-2 align-items-center">
-        <div class="col-auto">
-          <label for="iso_file" class="col-form-label fw-bold">64bit ISOファイル:</label>
-        </div>
-        <div class="col-auto">
-          <input class="form-control" type="file" id="iso_file" accept=".iso">
-        </div>
-        <div class="col-auto">
-          <label for="ram_size" class="col-form-label">RAM (MB):</label>
-        </div>
-        <div class="col-auto">
-          <input class="form-control" type="number" id="ram_size" value="512" min="128" max="2048" style="width: 100px;">
-        </div>
-        <div class="col-auto">
-          <button class="btn btn-primary fw-bold" id="start_btn" disabled>エミュレータ起動</button>
-        </div>
+    <div class="control-panel">
+      <div class="file-input-wrapper">
+        <label class="file-label" for="iso-file">起動する ISO イメージファイルを選択 (.iso)</label>
+        <input type="file" id="iso-file" accept=".iso,.img" />
       </div>
-      <div id="status_text" class="mt-2 small text-warning">ISOファイルを選択してください（※シリアルコンソール対応のOSが表示されます）</div>
+      <button id="start-btn" disabled>エミュレータを起動</button>
+      <div id="status-bar">システムファイルを点検中...</div>
+    </div>
+
+    <div class="terminal-card">
+      <div id="terminal-alpine-x86_64"></div>
     </div>
   </div>
 
-  <div class="d-inline-block border border-secondary" id="terminal-alpine-x86_64"></div>
+  <script src="./alpine-x86_64-module.js"></script>
+  <script src="./images/alpine-x86_64/load-rom.js"></script>
+  <script type="module">
+    import { Terminal } from 'https://cdn.jsdelivr.net/npm/xterm@5.3.0/+esm';
+    import { FitAddon } from 'https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/+esm';
+    import { openpty } from 'https://cdn.jsdelivr.net/npm/xterm-pty@0.9.4/+esm';
 
-</main>
+    const statusBar = document.getElementById('status-bar');
+    const startBtn = document.getElementById('start-btn');
+    const fileInput = document.getElementById('iso-file');
 
-<script src="./coi-serviceworker.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/xterm-pty@0.9.4/index.js" crossorigin="anonymous"></script>
-<script src="./alpine-x86_64-module.js"></script>
-<script src="./images/alpine-x86_64/load-rom.js"></script>
-
-<script type="module">
-  const isoInput = document.getElementById("iso_file");
-  const startBtn = document.getElementById("start_btn");
-  const ramInput = document.getElementById("ram_size");
-  const statusText = document.getElementById("status_text");
-  const envAlert = document.getElementById("env_alert");
-
-  let isoUint8Array = null;
-
-  async function checkRequiredFiles() {
     const requiredFiles = [
       './alpine-x86_64-module.js',
       './images/alpine-x86_64/load-rom.js',
-      './images/alpine-x86_64/out.js'
+      './images/alpine-x86_64/out.js',
+      './images/alpine-x86_64/qemu-system-x86_64.wasm'
     ];
-    const missing = [];
 
-    for (const path of requiredFiles) {
+    async function checkFiles() {
       try {
-        const res = await fetch(path, { method: 'HEAD' });
-        if (!res.ok) missing.push(`${path} (HTTP ${res.status})`);
-      } catch (e) {
-        missing.push(`${path} (取得失敗)`);
+        for (const file of requiredFiles) {
+          const res = await fetch(file, { method: 'HEAD' });
+          if (!res.ok) throw new Error(`必要ファイルが見つかりません: ${file}`);
+        }
+        statusBar.textContent = '準備完了：ISOファイルを選択して「エミュレータを起動」を押してください（未選択でもBIOS起動可能）。';
+        statusBar.className = 'ready';
+        startBtn.disabled = false;
+      } catch (err) {
+        statusBar.textContent = `エラー: ${err.message}`;
+        statusBar.className = 'error';
       }
     }
 
-    if (missing.length > 0) {
-      envAlert.classList.remove("d-none");
-      envAlert.innerHTML = `<strong>必要なファイルが見つかりません：</strong><ul class="mb-0 mt-1">${missing.map(m => `<li><code>${m}</code></li>`).join('')}</ul>`;
-    }
-  }
-  checkRequiredFiles();
+    const xterm = new Terminal({
+      cursorBlink: true,
+      fontSize: 14,
+      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      theme: {
+        background: '#0f172a',
+        foreground: '#f8fafc'
+      }
+    });
+    const fitAddon = new FitAddon();
+    xterm.loadAddon(fitAddon);
+    xterm.open(document.getElementById('terminal-alpine-x86_64'));
+    fitAddon.fit();
+    window.addEventListener('resize', () => fitAddon.fit());
 
-  isoInput.addEventListener("change", async (e) => {
-    const file = e.target.files?.item(0);
-    if (!file) return;
-
-    statusText.textContent = `読み込み中: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)...`;
-    startBtn.disabled = true;
-
-    try {
-      const buffer = await file.arrayBuffer();
-      isoUint8Array = new Uint8Array(buffer);
-
-      statusText.textContent = `準備完了: ${file.name} — 「エミュレータ起動」を押してください`;
-      startBtn.disabled = false;
-    } catch (err) {
-      statusText.textContent = "ファイルの読み込みに失敗しました: " + (err?.message || err);
-    }
-  });
-
-  window.Module = window.Module || {};
-  let xterm = null;
-
-  try {
-    xterm = new window.Terminal({ cols: 100, rows: 30 });
-    xterm.open(document.getElementById("terminal-alpine-x86_64"));
-
-    const { master, slave } = window.openpty();
+    const { master, slave } = openpty();
     xterm.loadAddon(master);
-    window.Module.pty = slave;
-  } catch (err) {
-    statusText.textContent = "ターミナルの初期化に失敗しました: " + (err?.message || err);
-  }
 
-  function patchTTY(mod) {
-    if (mod.TTY && mod.TTY.stream_ops && !mod.TTY.stream_ops._patched) {
-      const oldPoll = mod.TTY.stream_ops.poll;
-      const pty = mod.pty;
-      mod.TTY.stream_ops.poll = function(stream, timeout) {
-        if (!pty.readable) {
-          return (pty.readable ? 1 : 0) | (pty.writable ? 4 : 0);
+    let isRunning = false;
+
+    startBtn.addEventListener('click', async () => {
+      if (isRunning) return;
+      isRunning = true;
+      startBtn.disabled = true;
+      fileInput.disabled = true;
+      statusBar.textContent = 'WebAssembly モジュールを読み込み中...（初回は数十秒かかる場合があります）';
+      statusBar.className = '';
+
+      try {
+        const selectedFile = fileInput.files[0];
+        let isoData = null;
+        if (selectedFile) {
+          statusBar.textContent = `ISO イメージ (${selectedFile.name}) をメモリに展開中...`;
+          isoData = new Uint8Array(await selectedFile.arrayBuffer());
         }
-        return oldPoll.call(this, stream, timeout);
-      };
-      mod.TTY.stream_ops._patched = true;
-    }
-  }
 
-  startBtn.addEventListener("click", async () => {
-    if (!isoUint8Array) return;
-    startBtn.disabled = true;
-    isoInput.disabled = true;
-    statusText.textContent = "QEMU (x86_64) を起動しています...";
+        const qemuArgs = [
+          '-nographic',
+          '-m', '512M',
+          '-L', '/pack',
+          '-nic', 'none'
+        ];
 
-    const parsedRam = parseInt(ramInput.value, 10);
-    const ramMB = Number.isNaN(parsedRam) ? 512 : Math.min(2048, Math.max(128, parsedRam));
-    ramInput.value = ramMB;
+        if (isoData) {
+          qemuArgs.push('-cdrom', '/boot.iso', '-boot', 'd');
+        }
 
-    window.Module.arguments = [
-      '-L', '/pack',
-      '-m', `${ramMB}M`,
-      '-cdrom', '/iso/boot.iso',
-      '-boot', 'd',
-      '-nographic',
-      '-serial', 'mon:stdio'
-    ];
+        window.Module = Object.assign(window.Module || {}, {
+          pty: slave,
+          arguments: qemuArgs,
+          preRun: [
+            ...(window.Module?.preRun || []),
+            function () {
+              if (isoData && window.FS) {
+                window.FS.writeFile('/boot.iso', isoData);
+              }
+            }
+          ],
+          onRuntimeInitialized: () => {
+            statusBar.textContent = '起動完了：下のターミナル画面で操作できます。';
+            statusBar.className = 'ready';
+          }
+        });
 
-    window.Module.preRun = window.Module.preRun || [];
-    window.Module.preRun.push((mod) => {
-      try { mod.FS.mkdir('/iso'); } catch (e) {}
-      mod.FS.writeFile('/iso/boot.iso', isoUint8Array);
-      patchTTY(mod);
+        const { default: initEmscriptenModule } = await import('./images/alpine-x86_64/out.js');
+        await initEmscriptenModule(window.Module);
+      } catch (e) {
+        console.error(e);
+        statusBar.textContent = `起動エラー: ${e.message || e}`;
+        statusBar.className = 'error';
+        isRunning = false;
+        startBtn.disabled = false;
+        fileInput.disabled = false;
+      }
     });
 
-    const prevOnRuntimeInitialized = window.Module.onRuntimeInitialized;
-    window.Module.onRuntimeInitialized = function() {
-      if (typeof prevOnRuntimeInitialized === 'function') {
-        prevOnRuntimeInitialized.apply(this, arguments);
-      }
-      patchTTY(window.Module);
-      statusText.textContent = "起動完了（画面が表示されない場合は数秒待つか、ターミナルをクリックしてEnterキーを押してください）";
-      if (xterm) xterm.focus();
-    };
-
-    try {
-      const { default: initEmscriptenModule } = await import('./images/alpine-x86_64/out.js');
-      await initEmscriptenModule(window.Module);
-    } catch (err) {
-      statusText.textContent = "エラーが発生しました: " + (err?.message || err);
-      console.error(err);
-      startBtn.disabled = false;
-      isoInput.disabled = false;
-    }
-  });
-</script>
+    checkFiles();
+  </script>
 </body>
 </html>
