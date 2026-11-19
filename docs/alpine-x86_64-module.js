@@ -14,6 +14,6 @@ Module['arguments'] = [
     '-netdev', 'socket,id=vmnic,connect=localhost:8888', '-device', 'virtio-net-pci,netdev=vmnic'
 ];
 Module['locateFile'] = function(path, prefix) {
-    return '/qemu-wasm-demo/images/alpine-x86_64/' + path;
+    return '/qemu-wasm/images/alpine-x86_64/' + path;
 };
-Module['mainScriptUrlOrBlob'] = '/qemu-wasm-demo/images/alpine-x86_64/out.js'
+Module['mainScriptUrlOrBlob'] = '/qemu-wasm/images/alpine-x86_64/out.js'
