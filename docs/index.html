@@ -15,6 +15,8 @@
       --border-color: #e2e8f0;
       --primary: #2563eb;
       --primary-hover: #1d4ed8;
+      --secondary: #0f172a;
+      --secondary-hover: #334155;
     }
 
     * {
@@ -71,27 +73,31 @@
       margin-bottom: 20px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
+      flex-direction: column;
       gap: 16px;
     }
 
-    .file-input-wrapper {
-      flex: 1;
-      min-width: 240px;
+    .grid-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
     }
 
-    .file-label {
-      display: block;
+    .field-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .field-label {
       font-size: 0.85rem;
       font-weight: 600;
       color: var(--text-muted);
       margin-bottom: 6px;
     }
 
-    input[type="file"] {
+    input[type="file"], select {
       width: 100%;
-      padding: 8px;
+      padding: 8px 10px;
       background: #f1f5f9;
       border: 1px solid var(--border-color);
       border-radius: 8px;
@@ -100,25 +106,43 @@
       cursor: pointer;
     }
 
-    button#start-btn {
-      background-color: var(--primary);
-      color: #ffffff;
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    button {
       border: none;
       border-radius: 8px;
-      padding: 12px 24px;
-      font-size: 0.95rem;
+      padding: 11px 20px;
+      font-size: 0.92rem;
       font-weight: 600;
       cursor: pointer;
       transition: background-color 0.15s ease;
-      align-self: flex-end;
+    }
+
+    button#start-btn {
+      background-color: var(--primary);
+      color: #ffffff;
     }
 
     button#start-btn:hover:not(:disabled) {
       background-color: var(--primary-hover);
     }
 
-    button#start-btn:disabled {
-      background-color: #94a3b8;
+    button#save-disk-btn {
+      background-color: var(--secondary);
+      color: #ffffff;
+    }
+
+    button#save-disk-btn:hover:not(:disabled) {
+      background-color: var(--secondary-hover);
+    }
+
+    button:disabled {
+      background-color: #94a3b8 !important;
       cursor: not-allowed;
     }
 
@@ -170,11 +194,42 @@
     </header>
 
     <div class="control-panel">
-      <div class="file-input-wrapper">
-        <label class="file-label" for="iso-file">起動する ISO イメージファイルを選択 (.iso)</label>
-        <input type="file" id="iso-file" accept=".iso,.img" />
+      <div class="grid-row">
+        <div class="field-group">
+          <label class="field-label" for="iso-file">起動用 ISO イメージ (.iso)</label>
+          <input type="file" id="iso-file" accept=".iso" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="disk-file">仮想ディスク (.img / .qcow2・省略時は新規512MB作成)</label>
+          <input type="file" id="disk-file" accept=".img,.qcow2,.raw" />
+        </div>
       </div>
-      <button id="start-btn" disabled>エミュレータを起動</button>
+
+      <div class="grid-row">
+        <div class="field-group">
+          <label class="field-label" for="ram-select">メインメモリ (RAM)</label>
+          <select id="ram-select">
+            <option value="256M">256 MB</option>
+            <option value="512M" selected>512 MB</option>
+            <option value="1024M">1024 MB (1 GB)</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="vram-select">ビデオメモリ (VRAM)</label>
+          <select id="vram-select">
+            <option value="16" selected>16 MB (標準)</option>
+            <option value="32">32 MB</option>
+            <option value="64">64 MB</option>
+            <option value="128">128 MB</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button id="start-btn" disabled>エミュレータを起動</button>
+        <button id="save-disk-btn" disabled>仮想ディスクを保存 (.img)</button>
+      </div>
+
       <div id="status-bar">システムファイルを点検中...</div>
     </div>
 
@@ -192,7 +247,11 @@
 
     const statusBar = document.getElementById('status-bar');
     const startBtn = document.getElementById('start-btn');
-    const fileInput = document.getElementById('iso-file');
+    const saveDiskBtn = document.getElementById('save-disk-btn');
+    const isoInput = document.getElementById('iso-file');
+    const diskInput = document.getElementById('disk-file');
+    const ramSelect = document.getElementById('ram-select');
+    const vramSelect = document.getElementById('vram-select');
 
     const requiredFiles = [
       './alpine-x86_64-module.js',
@@ -207,7 +266,7 @@
           const res = await fetch(file, { method: 'HEAD' });
           if (!res.ok) throw new Error(`必要ファイルが見つかりません: ${file}`);
         }
-        statusBar.textContent = '準備完了：ISOファイルを選択して「エミュレータを起動」を押してください（未選択でもBIOS起動可能）。';
+        statusBar.textContent = '準備完了：ISOや仮想ディスク、メモリ設定を選んで「エミュレータを起動」を押してください。';
         statusBar.className = 'ready';
         startBtn.disabled = false;
       } catch (err) {
@@ -235,32 +294,80 @@
     xterm.loadAddon(master);
 
     let isRunning = false;
+    let activeDiskName = 'virtual-disk.img';
+
+    saveDiskBtn.addEventListener('click', () => {
+      try {
+        if (!window.FS) {
+          alert('エミュレータがまだ起動していません。');
+          return;
+        }
+        const diskBytes = window.FS.readFile('/disk.img');
+        const blob = new Blob([diskBytes], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = activeDiskName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        statusBar.textContent = `仮想ディスク (${activeDiskName}) をダウンロード保存しました。`;
+        statusBar.className = 'ready';
+      } catch (err) {
+        statusBar.textContent = `ディスク保存エラー: ${err.message}`;
+        statusBar.className = 'error';
+      }
+    });
 
     startBtn.addEventListener('click', async () => {
       if (isRunning) return;
       isRunning = true;
       startBtn.disabled = true;
-      fileInput.disabled = true;
-      statusBar.textContent = 'WebAssembly モジュールを読み込み中...（初回は数十秒かかる場合があります）';
+      isoInput.disabled = true;
+      diskInput.disabled = true;
+      ramSelect.disabled = true;
+      vramSelect.disabled = true;
+      statusBar.textContent = 'WebAssembly モジュールと仮想ディスクを準備中...';
       statusBar.className = '';
 
       try {
-        const selectedFile = fileInput.files[0];
+        const selectedIso = isoInput.files[0];
+        const selectedDisk = diskInput.files[0];
+        const ramSize = ramSelect.value;
+        const vramMb = vramSelect.value;
+
         let isoData = null;
-        if (selectedFile) {
-          statusBar.textContent = `ISO イメージ (${selectedFile.name}) をメモリに展開中...`;
-          isoData = new Uint8Array(await selectedFile.arrayBuffer());
+        if (selectedIso) {
+          statusBar.textContent = `ISO イメージ (${selectedIso.name}) を読み込み中...`;
+          isoData = new Uint8Array(await selectedIso.arrayBuffer());
+        }
+
+        let diskData = null;
+        if (selectedDisk) {
+          activeDiskName = selectedDisk.name;
+          statusBar.textContent = `仮想ディスク (${selectedDisk.name}) を読み込み中...`;
+          diskData = new Uint8Array(await selectedDisk.arrayBuffer());
+        } else {
+          activeDiskName = 'virtual-disk-512mb.img';
+          // 512MB の空ディスクイメージをスパース風に確保
+          diskData = new Uint8Array(512 * 1024 * 1024);
         }
 
         const qemuArgs = [
           '-nographic',
-          '-m', '512M',
+          '-m', ramSize,
           '-L', '/pack',
+          '-vga', 'std',
+          '-global', `VGA.vgamem_mb=${vramMb}`,
+          '-drive', 'file=/disk.img,format=raw,if=virtio',
           '-nic', 'none'
         ];
 
         if (isoData) {
           qemuArgs.push('-cdrom', '/boot.iso', '-boot', 'd');
+        } else {
+          qemuArgs.push('-boot', 'c');
         }
 
         window.Module = Object.assign(window.Module || {}, {
@@ -269,13 +376,17 @@
           preRun: [
             ...(window.Module?.preRun || []),
             function () {
-              if (isoData && window.FS) {
-                window.FS.writeFile('/boot.iso', isoData);
+              if (window.FS) {
+                window.FS.writeFile('/disk.img', diskData);
+                if (isoData) {
+                  window.FS.writeFile('/boot.iso', isoData);
+                }
               }
             }
           ],
           onRuntimeInitialized: () => {
-            statusBar.textContent = '起動完了：下のターミナル画面で操作できます。';
+            saveDiskBtn.disabled = false;
+            statusBar.textContent = `起動完了 (RAM: ${ramSize} / VRAM: ${vramMb}MB)：データの保存は「仮想ディスクを保存 (.img)」を押してください。`;
             statusBar.className = 'ready';
           }
         });
@@ -288,7 +399,10 @@
         statusBar.className = 'error';
         isRunning = false;
         startBtn.disabled = false;
-        fileInput.disabled = false;
+        isoInput.disabled = false;
+        diskInput.disabled = false;
+        ramSelect.disabled = false;
+        vramSelect.disabled = false;
       }
     });
 
