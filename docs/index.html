@@ -263,8 +263,8 @@
     async function checkFiles() {
       try {
         for (const file of requiredFiles) {
-          const res = await fetch(file, { method: 'HEAD' });
-          if (!res.ok) throw new Error(`必要ファイルが見つかりません: ${file}`);
+          const res = await fetch(file, { method: 'GET', headers: { 'Range': 'bytes=0-15' } });
+          if (!res.ok || res.status === 206) throw new Error(`必要ファイルが見つかりません: ${file}`);
         }
         statusBar.textContent = '準備完了：ISOや仮想ディスク、メモリ設定を選んで「エミュレータを起動」を押してください。';
         statusBar.className = 'ready';
