@@ -240,6 +240,7 @@
 
   <script src="./alpine-x86_64-module.js"></script>
   <script src="./images/alpine-x86_64/load-rom.js"></script>
+  <script>document.getElementById("status-bar").textContent="準備完了：設定を選んで起動してください。";document.getElementById("status-bar").className="ready";document.getElementById("start-btn").disabled=false;</script>
   <script type="module">
     import { Terminal } from 'https://cdn.jsdelivr.net/npm/xterm@5.3.0/+esm';
     import { FitAddon } from 'https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/+esm';
@@ -406,7 +407,7 @@
       }
     });
 
-    statusBar.textContent = "準備完了：ISOや仮想ディスク、メモリ設定を選んで「エミュレータを起動」を押してください。"; statusBar.className = "ready"; startBtn.disabled = false;
+    
   </script>
 </body>
 </html>
