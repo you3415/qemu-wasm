@@ -18,25 +18,16 @@
       --secondary: #0f172a;
       --secondary-hover: #334155;
     }
-
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       padding: 24px 16px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg-page);
       color: var(--text-main);
       line-height: 1.6;
     }
-
-    .container {
-      max-width: 960px;
-      margin: 0 auto;
-    }
-
+    .container { max-width: 960px; margin: 0 auto; }
     header {
       margin-bottom: 20px;
       padding-bottom: 16px;
@@ -47,14 +38,7 @@
       flex-wrap: wrap;
       gap: 12px;
     }
-
-    h1 {
-      margin: 0;
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
+    h1 { margin: 0; font-size: 1.4rem; font-weight: 700; }
     .badge {
       background: #eff6ff;
       color: var(--primary);
@@ -64,7 +48,6 @@
       font-size: 0.8rem;
       font-weight: 600;
     }
-
     .control-panel {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
@@ -76,25 +59,18 @@
       flex-direction: column;
       gap: 16px;
     }
-
     .grid-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 16px;
     }
-
-    .field-group {
-      display: flex;
-      flex-direction: column;
-    }
-
+    .field-group { display: flex; flex-direction: column; }
     .field-label {
       font-size: 0.85rem;
       font-weight: 600;
       color: var(--text-muted);
       margin-bottom: 6px;
     }
-
     input[type="file"], select {
       width: 100%;
       padding: 8px 10px;
@@ -103,16 +79,8 @@
       border-radius: 8px;
       font-size: 0.9rem;
       color: var(--text-main);
-      cursor: pointer;
     }
-
-    .button-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: center;
-    }
-
+    .button-row { display: flex; flex-wrap: wrap; gap: 12px; }
     button {
       border: none;
       border-radius: 8px;
@@ -120,32 +88,11 @@
       font-size: 0.92rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.15s ease;
     }
-
-    button#start-btn {
-      background-color: var(--primary);
-      color: #ffffff;
-    }
-
-    button#start-btn:hover:not(:disabled) {
-      background-color: var(--primary-hover);
-    }
-
-    button#save-disk-btn {
-      background-color: var(--secondary);
-      color: #ffffff;
-    }
-
-    button#save-disk-btn:hover:not(:disabled) {
-      background-color: var(--secondary-hover);
-    }
-
-    button:disabled {
-      background-color: #94a3b8 !important;
-      cursor: not-allowed;
-    }
-
+    button#start-btn { background-color: var(--primary); color: #ffffff; }
+    button#start-btn:hover:not(:disabled) { background-color: var(--primary-hover); }
+    button#save-disk-btn { background-color: var(--secondary); color: #ffffff; }
+    button:disabled { background-color: #94a3b8 !important; cursor: not-allowed; }
     #status-bar {
       width: 100%;
       padding: 10px 14px;
@@ -153,29 +100,15 @@
       background: #f1f5f9;
       border: 1px solid var(--border-color);
       font-size: 0.88rem;
-      color: var(--text-main);
     }
-
-    #status-bar.error {
-      background: #fef2f2;
-      border-color: #fecaca;
-      color: #dc2626;
-    }
-
-    #status-bar.ready {
-      background: #f0fdf4;
-      border-color: #bbf7d0;
-      color: #15803d;
-    }
-
+    #status-bar.error { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+    #status-bar.ready { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
     .terminal-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 12px;
       padding: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
-
     #terminal-alpine-x86_64 {
       width: 100%;
       min-height: 460px;
@@ -200,7 +133,7 @@
           <input type="file" id="iso-file" accept=".iso" />
         </div>
         <div class="field-group">
-          <label class="field-label" for="disk-file">仮想ディスク (.img / .qcow2・省略時は新規512MB作成)</label>
+          <label class="field-label" for="disk-file">仮想ディスク (.img / 省略時は新規64MB作成)</label>
           <input type="file" id="disk-file" accept=".img,.qcow2,.raw" />
         </div>
       </div>
@@ -230,7 +163,7 @@
         <button id="save-disk-btn" disabled>仮想ディスクを保存 (.img)</button>
       </div>
 
-      <div id="status-bar">システムファイルを点検中...</div>
+      <div id="status-bar">ターミナルモジュールを読み込み中...</div>
     </div>
 
     <div class="terminal-card">
@@ -238,14 +171,26 @@
     </div>
   </div>
 
+  <script>
+    window.addEventListener('error', (e) => {
+      const bar = document.getElementById('status-bar');
+      if (bar) {
+        bar.textContent = 'ページエラー: ' + (e.message || e.error);
+        bar.className = 'error';
+      }
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      const bar = document.getElementById('status-bar');
+      if (bar) {
+        bar.textContent = '非同期エラー: ' + (e.reason?.message || e.reason);
+        bar.className = 'error';
+      }
+    });
+  </script>
+
   <script src="./alpine-x86_64-module.js"></script>
   <script src="./images/alpine-x86_64/load-rom.js"></script>
-  <script>document.getElementById("status-bar").textContent="準備完了：設定を選んで起動してください。";document.getElementById("status-bar").className="ready";document.getElementById("start-btn").disabled=false;</script>
   <script type="module">
-    import { Terminal } from 'https://cdn.jsdelivr.net/npm/xterm@5.3.0/+esm';
-    import { FitAddon } from 'https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/+esm';
-    import { openpty } from 'https://cdn.jsdelivr.net/npm/xterm-pty@0.9.4/+esm';
-
     const statusBar = document.getElementById('status-bar');
     const startBtn = document.getElementById('start-btn');
     const saveDiskBtn = document.getElementById('save-disk-btn');
@@ -254,160 +199,145 @@
     const ramSelect = document.getElementById('ram-select');
     const vramSelect = document.getElementById('vram-select');
 
-    const requiredFiles = [
-      './alpine-x86_64-module.js',
-      './images/alpine-x86_64/load-rom.js',
-      './images/alpine-x86_64/out.js',
-      './images/alpine-x86_64/qemu-system-x86_64.wasm'
-    ];
+    try {
+      const [{ Terminal }, { FitAddon }, { openpty }] = await Promise.all([
+        import('https://esm.sh/xterm@5.3.0'),
+        import('https://esm.sh/xterm-addon-fit@0.8.0'),
+        import('https://esm.sh/xterm-pty@0.9.4')
+      ]);
 
-    async function checkFiles() {
-      try {
-        for (const file of requiredFiles) {
-          const res = await fetch(file, { method: 'GET', headers: { 'Range': 'bytes=0-15' } });
-          if (!res.ok || res.status === 206) throw new Error(`必要ファイルが見つかりません: ${file}`);
+      const xterm = new Terminal({
+        cursorBlink: true,
+        fontSize: 14,
+        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        theme: { background: '#0f172a', foreground: '#f8fafc' }
+      });
+      const fitAddon = new FitAddon();
+      xterm.loadAddon(fitAddon);
+      xterm.open(document.getElementById('terminal-alpine-x86_64'));
+      fitAddon.fit();
+      window.addEventListener('resize', () => fitAddon.fit());
+
+      const { master, slave } = openpty();
+      xterm.loadAddon(master);
+
+      let isRunning = false;
+      let activeDiskName = 'virtual-disk.img';
+
+      saveDiskBtn.addEventListener('click', () => {
+        try {
+          if (!window.FS) return;
+          const diskBytes = window.FS.readFile('/disk.img');
+          const blob = new Blob([diskBytes], { type: 'application/octet-stream' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = activeDiskName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          statusBar.textContent = `仮想ディスク (${activeDiskName}) を保存しました。`;
+          statusBar.className = 'ready';
+        } catch (err) {
+          statusBar.textContent = `ディスク保存エラー: ${err.message}`;
+          statusBar.className = 'error';
         }
-        statusBar.textContent = '準備完了：ISOや仮想ディスク、メモリ設定を選んで「エミュレータを起動」を押してください。';
-        statusBar.className = 'ready';
-        startBtn.disabled = false;
-      } catch (err) {
-        statusBar.textContent = `エラー: ${err.message}`;
-        statusBar.className = 'error';
-      }
-    }
+      });
 
-    const xterm = new Terminal({
-      cursorBlink: true,
-      fontSize: 14,
-      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-      theme: {
-        background: '#0f172a',
-        foreground: '#f8fafc'
-      }
-    });
-    const fitAddon = new FitAddon();
-    xterm.loadAddon(fitAddon);
-    xterm.open(document.getElementById('terminal-alpine-x86_64'));
-    fitAddon.fit();
-    window.addEventListener('resize', () => fitAddon.fit());
+      startBtn.addEventListener('click', async () => {
+        if (isRunning) return;
+        isRunning = true;
+        startBtn.disabled = true;
+        isoInput.disabled = true;
+        diskInput.disabled = true;
+        ramSelect.disabled = true;
+        vramSelect.disabled = true;
+        statusBar.textContent = 'WebAssembly モジュールと仮想ディスクを準備中...';
+        statusBar.className = '';
 
-    const { master, slave } = openpty();
-    xterm.loadAddon(master);
+        try {
+          const selectedIso = isoInput.files[0];
+          const selectedDisk = diskInput.files[0];
+          const ramSize = ramSelect.value;
+          const vramMb = vramSelect.value;
 
-    let isRunning = false;
-    let activeDiskName = 'virtual-disk.img';
+          let isoData = null;
+          if (selectedIso) {
+            statusBar.textContent = `ISO イメージ (${selectedIso.name}) を読み込み中...`;
+            isoData = new Uint8Array(await selectedIso.arrayBuffer());
+          }
 
-    saveDiskBtn.addEventListener('click', () => {
-      try {
-        if (!window.FS) {
-          alert('エミュレータがまだ起動していません。');
-          return;
-        }
-        const diskBytes = window.FS.readFile('/disk.img');
-        const blob = new Blob([diskBytes], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = activeDiskName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        statusBar.textContent = `仮想ディスク (${activeDiskName}) をダウンロード保存しました。`;
-        statusBar.className = 'ready';
-      } catch (err) {
-        statusBar.textContent = `ディスク保存エラー: ${err.message}`;
-        statusBar.className = 'error';
-      }
-    });
+          let diskData = null;
+          if (selectedDisk) {
+            activeDiskName = selectedDisk.name;
+            statusBar.textContent = `仮想ディスク (${selectedDisk.name}) を読み込み中...`;
+            diskData = new Uint8Array(await selectedDisk.arrayBuffer());
+          } else {
+            activeDiskName = 'virtual-disk-64mb.img';
+            diskData = new Uint8Array(64 * 1024 * 1024);
+          }
 
-    startBtn.addEventListener('click', async () => {
-      if (isRunning) return;
-      isRunning = true;
-      startBtn.disabled = true;
-      isoInput.disabled = true;
-      diskInput.disabled = true;
-      ramSelect.disabled = true;
-      vramSelect.disabled = true;
-      statusBar.textContent = 'WebAssembly モジュールと仮想ディスクを準備中...';
-      statusBar.className = '';
+          const qemuArgs = [
+            '-nographic',
+            '-m', ramSize,
+            '-L', '/pack',
+            '-vga', 'std',
+            '-global', `VGA.vgamem_mb=${vramMb}`,
+            '-drive', 'file=/disk.img,format=raw,if=virtio',
+            '-nic', 'none'
+          ];
 
-      try {
-        const selectedIso = isoInput.files[0];
-        const selectedDisk = diskInput.files[0];
-        const ramSize = ramSelect.value;
-        const vramMb = vramSelect.value;
+          if (isoData) {
+            qemuArgs.push('-cdrom', '/boot.iso', '-boot', 'd');
+          } else {
+            qemuArgs.push('-boot', 'c');
+          }
 
-        let isoData = null;
-        if (selectedIso) {
-          statusBar.textContent = `ISO イメージ (${selectedIso.name}) を読み込み中...`;
-          isoData = new Uint8Array(await selectedIso.arrayBuffer());
-        }
-
-        let diskData = null;
-        if (selectedDisk) {
-          activeDiskName = selectedDisk.name;
-          statusBar.textContent = `仮想ディスク (${selectedDisk.name}) を読み込み中...`;
-          diskData = new Uint8Array(await selectedDisk.arrayBuffer());
-        } else {
-          activeDiskName = 'virtual-disk-512mb.img';
-          // 512MB の空ディスクイメージをスパース風に確保
-          diskData = new Uint8Array(512 * 1024 * 1024);
-        }
-
-        const qemuArgs = [
-          '-nographic',
-          '-m', ramSize,
-          '-L', '/pack',
-          '-vga', 'std',
-          '-global', `VGA.vgamem_mb=${vramMb}`,
-          '-drive', 'file=/disk.img,format=raw,if=virtio',
-          '-nic', 'none'
-        ];
-
-        if (isoData) {
-          qemuArgs.push('-cdrom', '/boot.iso', '-boot', 'd');
-        } else {
-          qemuArgs.push('-boot', 'c');
-        }
-
-        window.Module = Object.assign(window.Module || {}, {
-          pty: slave,
-          arguments: qemuArgs,
-          preRun: [
-            ...(window.Module?.preRun || []),
-            function () {
-              if (window.FS) {
-                window.FS.writeFile('/disk.img', diskData);
-                if (isoData) {
-                  window.FS.writeFile('/boot.iso', isoData);
+          window.Module = Object.assign(window.Module || {}, {
+            pty: slave,
+            arguments: qemuArgs,
+            preRun: [
+              ...(window.Module?.preRun || []),
+              function () {
+                if (window.FS) {
+                  window.FS.writeFile('/disk.img', diskData);
+                  if (isoData) {
+                    window.FS.writeFile('/boot.iso', isoData);
+                  }
                 }
               }
+            ],
+            onRuntimeInitialized: () => {
+              saveDiskBtn.disabled = false;
+              statusBar.textContent = `起動完了 (RAM: ${ramSize} / VRAM: ${vramMb}MB)：データの保存は「仮想ディスクを保存 (.img)」を押してください。`;
+              statusBar.className = 'ready';
             }
-          ],
-          onRuntimeInitialized: () => {
-            saveDiskBtn.disabled = false;
-            statusBar.textContent = `起動完了 (RAM: ${ramSize} / VRAM: ${vramMb}MB)：データの保存は「仮想ディスクを保存 (.img)」を押してください。`;
-            statusBar.className = 'ready';
-          }
-        });
+          });
 
-        const { default: initEmscriptenModule } = await import('./images/alpine-x86_64/out.js');
-        await initEmscriptenModule(window.Module);
-      } catch (e) {
-        console.error(e);
-        statusBar.textContent = `起動エラー: ${e.message || e}`;
-        statusBar.className = 'error';
-        isRunning = false;
-        startBtn.disabled = false;
-        isoInput.disabled = false;
-        diskInput.disabled = false;
-        ramSelect.disabled = false;
-        vramSelect.disabled = false;
-      }
-    });
+          statusBar.textContent = 'QEMU 本体 (out.js / wasm) を起動中...';
+          const { default: initEmscriptenModule } = await import('./images/alpine-x86_64/out.js');
+          await initEmscriptenModule(window.Module);
+        } catch (e) {
+          console.error(e);
+          statusBar.textContent = `起動エラー: ${e.message || e}`;
+          statusBar.className = 'error';
+          isRunning = false;
+          startBtn.disabled = false;
+          isoInput.disabled = false;
+          diskInput.disabled = false;
+          ramSelect.disabled = false;
+          vramSelect.disabled = false;
+        }
+      });
 
-    
+      statusBar.textContent = '準備完了：設定を選んで「エミュレータを起動」を押してください。';
+      statusBar.className = 'ready';
+      startBtn.disabled = false;
+    } catch (initErr) {
+      statusBar.textContent = `初期化エラー: ${initErr.message || initErr}`;
+      statusBar.className = 'error';
+    }
   </script>
 </body>
 </html>
