@@ -200,23 +200,27 @@
     const vramSelect = document.getElementById('vram-select');
 
     try {
-      const [{ Terminal }, { FitAddon }, { openpty }] = await Promise.all([
-        import('https://esm.sh/xterm@5.3.0'),
-        import('https://esm.sh/xterm-addon-fit@0.8.0'),
-        import('https://esm.sh/xterm-pty@0.9.4')
+      const [xtermMod, fitMod, ptyMod] = await Promise.all([
+        import("https://cdn.jsdelivr.net/npm/xterm@5.3.0/+esm"),
+        import("https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/+esm"),
+        import("https://cdn.jsdelivr.net/npm/xterm-pty@0.9.4/+esm")
       ]);
+      const Terminal = xtermMod.Terminal || xtermMod.default?.Terminal;
+      const FitAddon = fitMod.FitAddon || fitMod.default?.FitAddon;
+      const openpty = ptyMod.openpty || ptyMod.default?.openpty || (typeof ptyMod.default === "function" ? ptyMod.default : null);
+      if (!openpty) throw new Error("openpty keys: " + Object.keys(ptyMod).join(","));
 
       const xterm = new Terminal({
         cursorBlink: true,
         fontSize: 14,
-        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-        theme: { background: '#0f172a', foreground: '#f8fafc' }
+        fontFamily: "Menlo, Monaco, \"Courier New\", monospace",
+        theme: { background: "#0f172a", foreground: "#f8fafc" }
       });
       const fitAddon = new FitAddon();
       xterm.loadAddon(fitAddon);
-      xterm.open(document.getElementById('terminal-alpine-x86_64'));
+      xterm.open(document.getElementById("terminal-alpine-x86_64"));
       fitAddon.fit();
-      window.addEventListener('resize', () => fitAddon.fit());
+      window.addEventListener("resize", () => fitAddon.fit());
 
       const { master, slave } = openpty();
       xterm.loadAddon(master);
