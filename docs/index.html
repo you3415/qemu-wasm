@@ -230,8 +230,8 @@
 
       saveDiskBtn.addEventListener('click', () => {
         try {
-          if (!window.FS) return;
-          const diskBytes = window.FS.readFile('/disk.img');
+          if (!(mod?.FS || window.Module?.FS || window.FS)) return;
+          const diskBytes = (mod?.FS || window.Module?.FS || window.FS).readFile('/disk.img');
           const blob = new Blob([diskBytes], { type: 'application/octet-stream' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -303,11 +303,11 @@
             arguments: qemuArgs,
             preRun: [
               ...(window.Module?.preRun || []),
-              function () {
-                if (window.FS) {
-                  window.FS.writeFile('/disk.img', diskData);
+              function (mod) {
+                if ((mod?.FS || window.Module?.FS || window.FS)) {
+                  (mod?.FS || window.Module?.FS || window.FS).writeFile('/disk.img', diskData);
                   if (isoData) {
-                    window.FS.writeFile('/boot.iso', isoData);
+                    (mod?.FS || window.Module?.FS || window.FS).writeFile('/boot.iso', isoData);
                   }
                 }
               }
