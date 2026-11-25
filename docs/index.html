@@ -162,6 +162,7 @@
       <div class="button-row">
         <button id="start-btn" disabled>エミュレータを起動</button>
         <button id="save-disk-btn" disabled>仮想ディスクを保存 (.img)</button>
+            <button id="send-tty-btn" style="background:#059669;color:#fff;">起動コマンド送信 (ttyS0)</button>
       </div>
 
       <div id="status-bar">ターミナルモジュールを読み込み中...</div>
@@ -204,7 +205,8 @@
       const [xtermMod, fitMod, ptyMod] = await Promise.all([
         import("https://cdn.jsdelivr.net/npm/xterm@5.3.0/+esm"),
         import("https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/+esm"),
-        import("https://cdn.jsdelivr.net/npm/xterm-pty@0.9.4/+esm")
+        import("https://cdn.jsdelivr.net/npm/xterm-pty@0.9.4/+esm"),
+        import("https://cdn.jsdelivr.net/npm/js-untar@2.0.0/+esm").catch(() => null)
       ]);
       const Terminal = xtermMod.Terminal || xtermMod.default?.Terminal;
       const FitAddon = fitMod.FitAddon || fitMod.default?.FitAddon;
@@ -224,6 +226,12 @@
       window.addEventListener("resize", () => fitAddon.fit());
 
       const { master, slave } = openpty();
+          document.getElementById("send-tty-btn").addEventListener("click", () => {
+            xterm.focus();
+            if (master && master.onData) {
+              for (const ch of "virt console=ttyS0\r") master.onData(ch);
+            }
+          });
       xterm.loadAddon(master);
 
       let isRunning = false;
