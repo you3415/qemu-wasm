@@ -294,7 +294,7 @@
           ];
 
           if (isoData) {
-            qemuArgs.push('-cdrom', '/boot.iso', '-boot', 'd');
+            qemuArgs.push('-drive', 'file=/boot.iso,media=cdrom,readonly=on', '-boot', 'd');
           } else {
             qemuArgs.push('-boot', 'c');
           }
@@ -303,13 +303,12 @@
             pty: slave,
             arguments: qemuArgs,
             preRun: [
-              ...(window.Module?.preRun || []),
               function (mod) {
-                if ((mod?.FS || window.Module?.FS || window.FS)) {
-                  (mod?.FS || window.Module?.FS || window.FS).writeFile('/disk.img', diskData);
-                  if (isoData) {
-                    (mod?.FS || window.Module?.FS || window.FS).writeFile('/boot.iso', isoData);
-                  }
+                const fs = (mod && mod.FS) || window.Module?.FS || window.FS;
+                if (!fs) return;
+                fs.writeFile("/disk.img", diskData);
+                if (isoData) {
+                  fs.writeFile("/boot.iso", isoData);
                 }
               }
             ],
