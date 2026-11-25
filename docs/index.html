@@ -292,7 +292,7 @@
 
           if (isoData) {
             qemuArgs.push(
-              '-drive', 'file=/boot.iso,format=raw,if=ide,index=0,media=disk,readonly=on',
+              '-drive', 'file=/boot.iso,format=raw,if=ide,index=0,media=disk',
               '-drive', 'file=/disk.img,format=raw,if=ide,index=1,media=disk',
               '-boot', 'c'
             );
