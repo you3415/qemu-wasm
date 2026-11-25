@@ -292,20 +292,23 @@
           }
 
           const qemuArgs = [
-            '-nographic',
-            '-m', ramSize,
-            '-L', '/pack-rom',
-            '-nic', 'none'
+            "-nographic",
+            "-m", ramSize,
+            "-L", "/pack-rom",
+            "-nic", "none"
           ];
 
           if (isoData) {
             qemuArgs.push(
-              '-drive', 'file=/boot.iso,format=raw,if=ide,index=0,media=disk',
-              '-drive', 'file=/disk.img,format=raw,if=ide,index=1,media=disk',
-              '-boot', 'c'
+              "-drive", "file=/boot.iso,format=raw,if=ide,index=0,media=disk",
+              "-drive", "file=/disk.img,format=raw,if=ide,index=1,media=disk",
+              "-boot", "c"
             );
           } else {
-            qemuArgs.push('-drive', 'file=/disk.img,format=raw,if=ide,index=0,media=disk', '-boot', 'c');
+            qemuArgs.push(
+              "-drive", "file=/disk.img,format=raw,if=ide,index=0,media=disk",
+              "-boot", "c"
+            );
           }
 
                     const romRes = await fetch("./images/alpine-x86_64/load-rom.data");
