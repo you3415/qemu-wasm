@@ -336,26 +336,20 @@ function extractFromIso(isoBytes, targetName) {
           ];
 
           const vmlinuzResp = await fetch("vmlinuz-virt");
-           const initrdResp = await fetch("initramfs-virt");
-           if (vmlinuzResp.ok && initrdResp.ok) {
-             Module.FS.writeFile("/vmlinuz", new Uint8Array(await vmlinuzResp.arrayBuffer()));
-             Module.FS.writeFile("/initrd", new Uint8Array(await initrdResp.arrayBuffer()));
-             qemuArgs.push(
-               "-kernel", "/vmlinuz",
-               "-initrd", "/initrd",
-               "-append", "console=ttyS0 ip=none quiet"
-             );
-           }
-           if (isoData) {
-             qemuArgs.push("-drive", "file=/boot.iso,format=raw,if=ide,index=0,media=disk");
-           }
-           qemuArgs.push("-drive", "file=/disk.img,format=raw,if=ide,index=1,media=disk");
-           } else {
+          const initrdResp = await fetch("initramfs-virt");
+          if (vmlinuzResp.ok && initrdResp.ok) {
+            Module.FS.writeFile("/vmlinuz", new Uint8Array(await vmlinuzResp.arrayBuffer()));
+            Module.FS.writeFile("/initrd", new Uint8Array(await initrdResp.arrayBuffer()));
             qemuArgs.push(
-              "-drive", "file=/disk.img,format=raw,if=ide,index=0,media=disk",
-              "-boot", "c"
+              "-kernel", "/vmlinuz",
+              "-initrd", "/initrd",
+              "-append", "console=ttyS0 ip=none quiet"
             );
           }
+          if (isoData) {
+            qemuArgs.push("-drive", "file=/boot.iso,format=raw,if=ide,index=0,media=disk");
+          }
+          qemuArgs.push("-drive", "file=/disk.img,format=raw,if=ide,index=1,media=disk");
 
                     const romRes = await fetch("./images/alpine-x86_64/load-rom.data");
           if (!romRes.ok) throw new Error("load-rom.data の取得に失敗: " + romRes.status);
