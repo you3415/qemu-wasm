@@ -299,13 +299,29 @@
             qemuArgs.push('-boot', 'c');
           }
 
+                    const romRes = await fetch("./images/alpine-x86_64/load-rom.data");
+          if (!romRes.ok) throw new Error("load-rom.data の取得に失敗: " + romRes.status);
+          const romBuf = new Uint8Array(await romRes.arrayBuffer());
+          const romFiles = [
+            ["/pack-rom/bios-256k.bin", 0, 262144],
+            ["/pack-rom/efi-virtio.rom", 262144, 421888],
+            ["/pack-rom/kvmvapic.bin", 421888, 431104],
+            ["/pack-rom/linuxboot_dma.bin", 431104, 432640],
+            ["/pack-rom/vgabios-stdvga.bin", 432640, 473088]
+          ];
+
           window.Module = Object.assign(window.Module || {}, {
             pty: slave,
             arguments: qemuArgs,
+            locateFile: (path) => "./images/alpine-x86_64/" + path,
             preRun: [
               function (mod) {
                 const fs = (mod && mod.FS) || window.Module?.FS || window.FS;
                 if (!fs) return;
+                try { fs.mkdir("/pack-rom"); } catch (e) {}
+                for (const [name, start, end] of romFiles) {
+                  fs.writeFile(name, romBuf.subarray(start, end));
+                }
                 fs.writeFile("/disk.img", diskData);
                 if (isoData) {
                   fs.writeFile("/boot.iso", isoData);
