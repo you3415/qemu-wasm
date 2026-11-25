@@ -142,8 +142,9 @@
         <div class="field-group">
           <label class="field-label" for="ram-select">メインメモリ (RAM)</label>
           <select id="ram-select">
-            <option value="256M">256 MB</option>
-            <option value="512M" selected>512 MB</option>
+            <option value="128M" selected>128 MB (軽量・安定)</option>
+                <option value="256M">256 MB</option>
+            <option value="512M">512 MB</option>
             <option value="1024M">1024 MB (1 GB)</option>
           </select>
         </div>
@@ -278,8 +279,8 @@
             statusBar.textContent = `仮想ディスク (${selectedDisk.name}) を読み込み中...`;
             diskData = new Uint8Array(await selectedDisk.arrayBuffer());
           } else {
-            activeDiskName = 'virtual-disk-64mb.img';
-            diskData = new Uint8Array(64 * 1024 * 1024);
+            activeDiskName = 'virtual-disk-16mb.img';
+            diskData = new Uint8Array(16 * 1024 * 1024);
           }
 
           const qemuArgs = [
