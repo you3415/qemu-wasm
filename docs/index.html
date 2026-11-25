@@ -348,7 +348,7 @@ function extractFromIso(isoBytes, targetName) {
             );
           }
           if (isoData) {
-            qemuArgs.push("-drive", "file=/boot.iso,format=raw,if=ide,index=0,media=disk");
+            qemuArgs.push("-drive", "file=/boot.iso,format=raw,if=ide,index=0,media=cdrom");
           }
           qemuArgs.push("-drive", "file=/disk.img,format=raw,if=ide,index=1,media=disk");
 
