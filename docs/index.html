@@ -226,7 +226,43 @@
       fitAddon.fit();
       window.addEventListener("resize", () => fitAddon.fit());
 
-      const { master, slave } = openpty();
+      
+function extractFromIso(isoBytes, targetName) {
+  const view = new DataView(isoBytes.buffer, isoBytes.byteOffset, isoBytes.byteLength);
+  const dec = new TextDecoder("ascii");
+  // Primary Volume Descriptor at sector 16 (offset 32768)
+  const rootLba = view.getUint32(32768 + 156 + 2, true);
+  const rootLen = view.getUint32(32768 + 156 + 10, true);
+  function searchDir(lba, len) {
+    let pos = lba * 2048;
+    const end = pos + len;
+    while (pos < end) {
+      const recLen = view.getUint8(pos);
+      if (recLen === 0) {
+        pos = (Math.floor(pos / 2048) + 1) * 2048;
+        continue;
+      }
+      const extLba = view.getUint32(pos + 2, true);
+      const extLen = view.getUint32(pos + 10, true);
+      const flags = view.getUint8(pos + 25);
+      const nameLen = view.getUint8(pos + 32);
+      let name = dec.decode(isoBytes.subarray(pos + 33, pos + 33 + nameLen)).split(";")[0].toLowerCase();
+      if (name !== "\x00" && name !== "\x01") {
+        if (flags & 2) {
+          const found = searchDir(extLba, extLen);
+          if (found) return found;
+        } else if (name === targetName.toLowerCase()) {
+          return isoBytes.slice(extLba * 2048, extLba * 2048 + extLen);
+        }
+      }
+      pos += recLen;
+    }
+    return null;
+  }
+  return searchDir(rootLba, rootLen);
+}
+
+          const { master, slave } = openpty();
           document.getElementById("send-tty-btn").addEventListener("click", () => {
             xterm.focus();
             if (master && master.onData) {
@@ -300,12 +336,26 @@
           ];
 
           if (isoData) {
-            qemuArgs.push(
-              "-drive", "file=/boot.iso,format=raw,if=ide,index=0,media=disk",
-              "-drive", "file=/disk.img,format=raw,if=ide,index=1,media=disk",
-              "-boot", "c"
-            );
-          } else {
+             const vmlinuz = extractFromIso(isoData, "vmlinuz-virt") || extractFromIso(isoData, "vmlinuz-lts");
+             const initrd = extractFromIso(isoData, "initramfs-virt") || extractFromIso(isoData, "initramfs-lts");
+             if (vmlinuz && initrd) {
+               Module.FS.writeFile("/vmlinuz", vmlinuz);
+               Module.FS.writeFile("/initrd", initrd);
+               qemuArgs.push(
+                 "-kernel", "/vmlinuz",
+                 "-initrd", "/initrd",
+                 "-append", "console=ttyS0 modules=loop,squashfs,sd-mod,usb-storage quiet",
+                 "-drive", "file=/boot.iso,format=raw,if=ide,index=0,media=cdrom",
+                 "-drive", "file=/disk.img,format=raw,if=ide,index=1,media=disk"
+               );
+             } else {
+               qemuArgs.push(
+                 "-drive", "file=/boot.iso,format=raw,if=ide,index=0,media=disk",
+                 "-drive", "file=/disk.img,format=raw,if=ide,index=1,media=disk",
+                 "-boot", "c"
+               );
+             }
+           } else {
             qemuArgs.push(
               "-drive", "file=/disk.img,format=raw,if=ide,index=0,media=disk",
               "-boot", "c"
