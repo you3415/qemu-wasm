@@ -294,7 +294,7 @@
           ];
 
           if (isoData) {
-            qemuArgs.push('-drive', 'file=/boot.iso,media=cdrom,readonly=on', '-boot', 'd');
+            qemuArgs.push('-drive', 'file=/boot.iso,format=raw,if=virtio,readonly=on', '-boot', 'order=c');
           } else {
             qemuArgs.push('-boot', 'c');
           }
