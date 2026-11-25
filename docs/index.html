@@ -335,26 +335,21 @@ function extractFromIso(isoBytes, targetName) {
             "-nic", "none"
           ];
 
-          if (isoData) {
-             const vmlinuz = extractFromIso(isoData, "vmlinuz-virt") || extractFromIso(isoData, "vmlinuz-lts");
-             const initrd = extractFromIso(isoData, "initramfs-virt") || extractFromIso(isoData, "initramfs-lts");
-             if (vmlinuz && initrd) {
-               Module.FS.writeFile("/vmlinuz", vmlinuz);
-               Module.FS.writeFile("/initrd", initrd);
-               qemuArgs.push(
-                 "-kernel", "/vmlinuz",
-                 "-initrd", "/initrd",
-                 "-append", "console=ttyS0 modules=loop,squashfs,sd-mod,usb-storage quiet",
-                 "-drive", "file=/boot.iso,format=raw,if=ide,index=0,media=cdrom",
-                 "-drive", "file=/disk.img,format=raw,if=ide,index=1,media=disk"
-               );
-             } else {
-               qemuArgs.push(
-                 "-drive", "file=/boot.iso,format=raw,if=ide,index=0,media=disk",
-                 "-drive", "file=/disk.img,format=raw,if=ide,index=1,media=disk",
-                 "-boot", "c"
-               );
-             }
+          const vmlinuzResp = await fetch("vmlinuz-virt");
+           const initrdResp = await fetch("initramfs-virt");
+           if (vmlinuzResp.ok && initrdResp.ok) {
+             Module.FS.writeFile("/vmlinuz", new Uint8Array(await vmlinuzResp.arrayBuffer()));
+             Module.FS.writeFile("/initrd", new Uint8Array(await initrdResp.arrayBuffer()));
+             qemuArgs.push(
+               "-kernel", "/vmlinuz",
+               "-initrd", "/initrd",
+               "-append", "console=ttyS0 ip=none quiet"
+             );
+           }
+           if (isoData) {
+             qemuArgs.push("-drive", "file=/boot.iso,format=raw,if=ide,index=0,media=disk");
+           }
+           qemuArgs.push("-drive", "file=/disk.img,format=raw,if=ide,index=1,media=disk");
            } else {
             qemuArgs.push(
               "-drive", "file=/disk.img,format=raw,if=ide,index=0,media=disk",
