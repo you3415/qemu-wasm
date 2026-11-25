@@ -337,7 +337,8 @@ function extractFromIso(isoBytes, targetName) {
 
           const vmlinuzResp = await fetch("vmlinuz-virt");
           const initrdResp = await fetch("initramfs-virt");
-          if (vmlinuzResp.ok && initrdResp.ok) {
+          if (!vmlinuzResp.ok || !initrdResp.ok) throw new Error("Kernel fetch failed: " + vmlinuzResp.status + "/" + initrdResp.status);
+          if (true) {
             window._vmlinuz = new Uint8Array(await vmlinuzResp.arrayBuffer());
             window._initrd = new Uint8Array(await initrdResp.arrayBuffer());
             qemuArgs.push(
