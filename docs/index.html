@@ -287,16 +287,18 @@
             '-nographic',
             '-m', ramSize,
             '-L', '/pack-rom',
-            '-vga', 'std',
-            '-global', `VGA.vgamem_mb=${vramMb}`,
-            '-drive', 'file=/disk.img,format=raw,if=virtio',
             '-nic', 'none'
           ];
 
           if (isoData) {
-            qemuArgs.push('-drive', 'file=/boot.iso,format=raw,if=virtio,readonly=on', '-boot', 'order=c');
+            qemuArgs.push(
+              '-drive', 'file=/boot.iso,format=raw,if=none,id=bootdrv,readonly=on',
+              '-device', 'virtio-blk-pci,drive=bootdrv,bootindex=1',
+              '-drive', 'file=/disk.img,format=raw,if=none,id=hdddrv',
+              '-device', 'virtio-blk-pci,drive=hdddrv,bootindex=2'
+            );
           } else {
-            qemuArgs.push('-boot', 'c');
+            qemuArgs.push('-drive', 'file=/disk.img,format=raw,if=virtio');
           }
 
                     const romRes = await fetch("./images/alpine-x86_64/load-rom.data");
