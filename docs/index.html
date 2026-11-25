@@ -374,6 +374,7 @@ function extractFromIso(isoBytes, targetName) {
                 for (const [name, start, end] of romFiles) {
                   fs.writeFile(name, romBuf.subarray(start, end));
                 }
+                if (window._vmlinuz) fs.writeFile("/vmlinuz", window._vmlinuz); if (window._initrd) fs.writeFile("/initrd", window._initrd);
                 fs.writeFile("/disk.img", diskData);
                 if (isoData) {
                   fs.writeFile("/boot.iso", isoData);
