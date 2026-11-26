@@ -346,7 +346,7 @@ function extractFromIso(isoBytes, targetName) {
             qemuArgs.push(
               "-kernel", "/vmlinuz",
               "-initrd", "/initrd",
-              "-append", "console=ttyS0 ip=none noapic quiet"
+              "-append", "console=ttyS0 ip=none noapic nowatchdog tsc=unstable clocksource=jiffies"
             );
           }
           if (isoData) {
