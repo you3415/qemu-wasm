@@ -143,8 +143,8 @@
         <div class="field-group">
           <label class="field-label" for="ram-select">メインメモリ (RAM)</label>
           <select id="ram-select">
-            <option value="128M" selected>128 MB (軽量・安定)</option>
-                <option value="256M">256 MB</option>
+            <option value="128M">128 MB (軽量・安定)</option>
+                <option value="256M" selected>256 MB</option>
             <option value="512M">512 MB</option>
             <option value="1024M">1024 MB (1 GB)</option>
           </select>
@@ -163,7 +163,8 @@
       <div class="button-row">
         <button id="start-btn" disabled>エミュレータを起動</button>
         <button id="save-disk-btn" disabled>仮想ディスクを保存 (.img)</button>
-            <button id="send-tty-btn" style="background:#059669;color:#fff;">起動コマンド送信 (ttyS0)</button>
+            <input id="cmd-input" type="text" placeholder="コマンド入力 (例: root, ls)" style="padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-family:monospace;width:220px;" />
+        <button id="send-cmd-btn" style="background:#059669;color:#fff;">送信 (Enter)</button>
       </div>
 
       <div id="status-bar">ターミナルモジュールを読み込み中...</div>
@@ -263,7 +264,20 @@ function extractFromIso(isoBytes, targetName) {
 }
 
           const { master, slave } = openpty();
-          document.getElementById("send-tty-btn").addEventListener("click", () => {
+          const cmdInput = document.getElementById("cmd-input");
+      const sendCmd = () => {
+        if (!cmdInput) return;
+        const val = cmdInput.value;
+        if (master && master.onData) {
+          for (const ch of val + "\r") master.onData(ch);
+        }
+        cmdInput.value = "";
+      };
+      if (cmdInput) {
+        cmdInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendCmd(); } });
+        document.getElementById("send-cmd-btn").addEventListener("click", sendCmd);
+      }
+      if (false) document.body.addEventListener("click", () => {
             xterm.focus();
             if (master && master.onData) {
               for (const ch of "virt console=ttyS0\r") master.onData(ch);
