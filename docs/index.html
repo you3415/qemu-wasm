@@ -337,6 +337,8 @@ function extractFromIso(isoBytes, targetName) {
 
           const vmlinuzResp = await fetch("vmlinuz-virt");
           const initrdResp = await fetch("initramfs-virt");
+          const lbootResp = await fetch("linuxboot_dma.bin");
+          if (lbootResp.ok) window._lboot = new Uint8Array(await lbootResp.arrayBuffer());
           if (!vmlinuzResp.ok || !initrdResp.ok) throw new Error("Kernel fetch failed: " + vmlinuzResp.status + "/" + initrdResp.status);
           if (true) {
             window._vmlinuz = new Uint8Array(await vmlinuzResp.arrayBuffer());
@@ -375,6 +377,7 @@ function extractFromIso(isoBytes, targetName) {
                 for (const [name, start, end] of romFiles) {
                   fs.writeFile(name, romBuf.subarray(start, end));
                 }
+                if (window._lboot) fs.writeFile("/pack-rom/linuxboot_dma.bin", window._lboot);
                 if (window._vmlinuz) fs.writeFile("/vmlinuz", window._vmlinuz); if (window._initrd) fs.writeFile("/initrd", window._initrd);
                 fs.writeFile("/disk.img", diskData);
                 if (isoData) {
